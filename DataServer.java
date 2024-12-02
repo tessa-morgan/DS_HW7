@@ -55,7 +55,7 @@ public class DataServer {
         try {
             InputStream input = requestingSocket.getInputStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-            PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true);
+            PrintWriter writer = new PrintWriter(requestingSocket.getOutputStream(), true);
             String request = reader.readLine();
             System.out.println("Received request: " + request);
 
@@ -74,7 +74,8 @@ public class DataServer {
                 //synchronized (lock) {
                     dataStore = newValue;
                     // 2 - Update backup servers
-                    for (Socket backupSocket : backupServers.values()) {
+                    for (Integer port : backupServers.values()) {
+                        Socket backupSocket = new Socket("localhost", port);
                         PrintWriter backupWriter = new PrintWriter(backupSocket.getOutputStream(), true);
                         backupWriter.println("UPDATE:" + newValue);
                     }
@@ -104,7 +105,8 @@ public class DataServer {
                 //synchronized (lock) {
                     dataStore = newValue;
                     // Propagate to all backups
-                    for (Socket backupSocket : backupServers.values()) {
+                    for (Integer port : backupServers.values()) {
+                        Socket backupSocket = new Socket("localhost", port);
                         PrintWriter backupWriter = new PrintWriter(backupSocket.getOutputStream(), true);
                         backupWriter.println("UPDATE:" + newValue);
                     }
@@ -212,7 +214,7 @@ public class DataServer {
                 
                 // Update data store replica
                 //synchronized (lock) {
-                    backupDataStore.set(i, newValue);
+                    backupDataStore.set(key, newValue);
                 //}
 
                 // Send acknowledgement
@@ -229,7 +231,7 @@ public class DataServer {
      * Gets the key associated with a given value
      * Source: https://www.baeldung.com/java-map-key-from-value
      */
-    private static int getKey(Map<K, V> map, V value) {
+    private static int getKey(Map<Integer, Integer> map, Integer value) {
         return map
           .entrySet()
           .stream()

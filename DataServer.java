@@ -142,7 +142,7 @@ public class DataServer {
         PrintWriter primaryWriter = new PrintWriter(primarySocket.getOutputStream(), true);
 
         // 1 - Send join request
-        primaryWriter.println("JOIN: " + backupPort);
+        primaryWriter.println("JOIN:" + backupPort);
 
         // 2 - Set up backup replica of data store
         int i = getKey(backupServers, backupPort);
@@ -196,7 +196,7 @@ public class DataServer {
 
                 // 1 - Send UPDATE to primary server 
                 PrintWriter primaryWriter = new PrintWriter(primarySocket.getOutputStream(), true);
-                primaryWriter.println("UPDATE: " + newValue);
+                primaryWriter.println("UPDATE:" + newValue);
 
                 // 1 - Wait for response from server
                 input = primarySocket.getInputStream();

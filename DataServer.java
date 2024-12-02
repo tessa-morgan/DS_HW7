@@ -33,7 +33,7 @@ public class DataServer {
      * @param primaryPort
      * @throws IOException
      */
-    public static synchronized void startPrimaryServer(int primaryPort) throws IOException {
+    public static void startPrimaryServer(int primaryPort) throws IOException {
         System.out.println("I am the primary!");
         // 1 - Set up primary data store, defaults to zero
         dataStore = 0;
@@ -141,7 +141,7 @@ public class DataServer {
      * @param primaryPort
      * @throws IOException
      */
-    public static synchronized void startBackupServer(int backupPort, int primaryPort) throws IOException {
+    public static void startBackupServer(int backupPort, int primaryPort) throws IOException {
         Socket primarySocket;
         PrintWriter primaryWriter;
         int key;

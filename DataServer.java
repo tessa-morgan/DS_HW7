@@ -7,7 +7,7 @@ import java.util.stream.Stream;
 
 public class DataServer {
     private static int dataStore; // Primary data store
-    private static int numBackups = -1;
+    private static int numBackups = 0;
     private static ArrayList<Integer> backupDataStore = new ArrayList<Integer>();
     private static ArrayList<Integer> backupServers = new ArrayList<Integer>();
     private static final Object lock = new Object(); // To ensure sequential consistency
@@ -91,8 +91,7 @@ public class DataServer {
             else if (request.startsWith("JOIN:")) {
                 // 1 - Record backup's port number
                 int backupPort = Integer.parseInt(request.split(":")[1]);
-                numBackups++;
-                backupServers.add(numBackups, backupPort);
+                backupServers.add(numBackups - 1, backupPort);
                 
                 // 2 - Send acknowledgement
                 writer.println("COMPLETE_JOIN");
@@ -143,11 +142,13 @@ public class DataServer {
         Socket primarySocket = new Socket("localhost", primaryPort);
         PrintWriter primaryWriter = new PrintWriter(primarySocket.getOutputStream(), true);
 
+        int key = numBackups;
+        numBackups++;
+
         // 1 - Send join request
         primaryWriter.println("JOIN:" + backupPort);
 
         // 2 - Set up backup replica of data store
-        int key = numBackups;
         backupDataStore.add(key, 0);
 
         // Wait for response from join request

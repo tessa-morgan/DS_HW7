@@ -6,13 +6,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DataServer {
-    private static int dataStore; // Primary data store
     private static int numBackups = 0;
-    private static ArrayList<Integer> backupDataStore = new ArrayList<Integer>();
     private static ArrayList<Integer> backupServers = new ArrayList<Integer>();
     private static final Object lock = new Object(); // To ensure sequential consistency
 
     public static void main(String[] args) throws IOException {
+        ArrayList<Integer> backupDataStore = new ArrayList<Integer>();
+        
         if (args.length == 1) {
             int primaryPort = Integer.parseInt(args[0]);
             startPrimaryServer(primaryPort);
@@ -20,7 +20,7 @@ public class DataServer {
         else if (args.length == 2) {
             int backupPort = Integer.parseInt(args[0]);
             int primaryPort = Integer.parseInt(args[1]);
-            startBackupServer(backupPort, primaryPort);
+            startBackupServer(backupPort, primaryPort, backupDataStore);
         } 
         else {
             System.out.println("Invalid arguments.");
@@ -35,7 +35,7 @@ public class DataServer {
      */
     public static void startPrimaryServer(int primaryPort) throws IOException {
         // 1 - Set up primary data store, defaults to zero
-        dataStore = 0;
+        int dataStore = 0;
 
         // 2 - Create TCP server socket
         ServerSocket serverSocket = new ServerSocket(primaryPort);
@@ -43,7 +43,7 @@ public class DataServer {
         // 3 - Wait at port for requests
         while (true) {
             Socket requestingSocket = serverSocket.accept();
-            new Thread(() -> handlePrimaryRequest(requestingSocket)).start();
+            new Thread(() -> handlePrimaryRequest(requestingSocket, dataStore)).start();
         }
     }
 
@@ -51,7 +51,7 @@ public class DataServer {
      * 
      * @param clientSocket
      */
-    private static synchronized void handlePrimaryRequest(Socket requestingSocket) {
+    private static synchronized int handlePrimaryRequest(Socket requestingSocket, int dataStore) {
         try {
             InputStream input = requestingSocket.getInputStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(input));
@@ -125,6 +125,8 @@ public class DataServer {
         catch (IOException e) {
             e.printStackTrace();
         }
+        
+        return dataStore;
     }
 
 
@@ -135,7 +137,7 @@ public class DataServer {
      * @param primaryPort
      * @throws IOException
      */
-    public static void startBackupServer(int backupPort, int primaryPort) throws IOException {
+    public static void startBackupServer(int backupPort, int primaryPort, ArrayList<Integer> backupDataStore) throws IOException {
         Socket primarySocket = new Socket("localhost", primaryPort);
         PrintWriter primaryWriter = new PrintWriter(primarySocket.getOutputStream(), true);
             
@@ -160,7 +162,7 @@ public class DataServer {
         // 3 - Wait at port for requests
         while (true) {
             Socket clientSocket = backupServerSocket.accept();
-            new Thread(() -> handleBackupRequest(clientSocket, primaryPort, key)).start();
+            new Thread(() -> handleBackupRequest(clientSocket, primaryPort, key, backupDataStore)).start();
         }
     }
 
@@ -170,7 +172,7 @@ public class DataServer {
      * @param primarySocket
      * @param backupSocket The current backup
      */
-    private static synchronized void handleBackupRequest(Socket clientSocket, int primaryPort, int key) {
+    private static synchronized ArrayList<Integer> handleBackupRequest(Socket clientSocket, int primaryPort, int key, ArrayList<Integer> backupDataStore) {
         try {
             // Setup reader and writer for client
             InputStream input = clientSocket.getInputStream();
@@ -220,6 +222,8 @@ public class DataServer {
         catch (IOException e) {
             e.printStackTrace();
         }
+    
+        return backupDataStore;
     }
 
 }

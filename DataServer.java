@@ -70,6 +70,7 @@ public class DataServer {
 
             /* Write Request */
             else if (request.startsWith("WRITE:")) {
+                System.out.println("\tWrite at primary recieved");
                 // 1 - Update own data store replica
                 int newValue = Integer.parseInt(request.split(":")[1]);
                 
@@ -89,6 +90,7 @@ public class DataServer {
 
             /* Join Request */
             else if (request.startsWith("JOIN:")) {
+                System.out.println("\tJoin at primary recieved");
                 // 1 - Record backup's port number
                 int backupPort = Integer.parseInt(request.split(":")[1]);
                 backupServers.add(numBackups, backupPort);
@@ -99,6 +101,7 @@ public class DataServer {
 
             /* Update Request */
             else if (request.startsWith("UPDATE:")) {
+                System.out.println("\tUpdate at primary recieved");
                 // Get the new data store value
                 int newValue = Integer.parseInt(request.split(":")[1]);
 
@@ -191,6 +194,7 @@ public class DataServer {
 
             /* Write Request */
             else if (request.startsWith("WRITE:")) {
+                System.out.println("\t\tWrite at backup recieved on port" + backupServers.get(key));
                 // Get new value 
                 int newValue = Integer.parseInt(request.split(":")[1]);
 
@@ -210,6 +214,7 @@ public class DataServer {
             
             /* Update Request */
             else if (request.startsWith("UPDATE:")) {
+                System.out.println("\t\tUpdate at backup recieved on port" + backupServers.get(key));
                 int newValue = Integer.parseInt(request.split(":")[1]);
                 
                 // Update data store replica

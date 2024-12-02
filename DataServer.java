@@ -91,7 +91,7 @@ public class DataServer {
             else if (request.startsWith("JOIN:")) {
                 // 1 - Record backup's port number
                 int backupPort = Integer.parseInt(request.split(":")[1]);
-                backupServers.add(numBackups - 1, backupPort);
+                backupServers.add(numBackups, backupPort);
                 
                 // 2 - Send acknowledgement
                 writer.println("COMPLETE_JOIN");
@@ -141,15 +141,12 @@ public class DataServer {
         System.out.println("I am a backup with port: " + backupPort);
         Socket primarySocket = new Socket("localhost", primaryPort);
         PrintWriter primaryWriter = new PrintWriter(primarySocket.getOutputStream(), true);
+        
+        // 1 - Send join request
+        primaryWriter.println("JOIN:" + backupPort);
 
         int key = numBackups;
-        
-        synchronized (lock) {
-            numBackups++;
-            
-            // 1 - Send join request
-            primaryWriter.println("JOIN:" + backupPort);
-        }
+        numBackups++;
 
         // 2 - Set up backup replica of data store
         backupDataStore.add(key, 0);

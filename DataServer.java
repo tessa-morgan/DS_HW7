@@ -147,14 +147,19 @@ public class DataServer {
         int key = numBackups;
         numBackups++;
 
-        // 2 - Set up backup replica of data store
-        backupDataStore.add(key, 0);
-
         // Wait for response from join request
         InputStream input = primarySocket.getInputStream();
         BufferedReader reader = new BufferedReader(new InputStreamReader(input));
         String joinResponse = reader.readLine();
         System.out.println(joinResponse);
+
+        primaryWriter.println("READ");
+        String line = reader.readLine();
+        line = (line.split(":")[1]).substring(1);
+        int dataStore = Integer.parseInt(line);
+
+        // 2 - Set up backup replica of data store
+        backupDataStore.add(key, dataStore);
 
         // After acknowledged, set up the backup server
         ServerSocket backupServerSocket = new ServerSocket(backupPort);

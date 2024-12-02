@@ -33,7 +33,7 @@ public class DataServer {
      * @param primaryPort
      * @throws IOException
      */
-    public static void startPrimaryServer(int primaryPort) throws IOException {
+    public static synchronized void startPrimaryServer(int primaryPort) throws IOException {
         System.out.println("I am the primary!");
         // 1 - Set up primary data store, defaults to zero
         dataStore = 0;
@@ -53,7 +53,7 @@ public class DataServer {
      * 
      * @param clientSocket
      */
-    private static void handlePrimaryRequest(Socket requestingSocket) {
+    private static synchronized void handlePrimaryRequest(Socket requestingSocket) {
         try {
             InputStream input = requestingSocket.getInputStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(input));
@@ -141,7 +141,7 @@ public class DataServer {
      * @param primaryPort
      * @throws IOException
      */
-    public static void startBackupServer(int backupPort, int primaryPort) throws IOException {
+    public static synchronized void startBackupServer(int backupPort, int primaryPort) throws IOException {
         Socket primarySocket;
         PrintWriter primaryWriter;
         int key;
@@ -187,7 +187,7 @@ public class DataServer {
      * @param primarySocket
      * @param backupSocket The current backup
      */
-    private static void handleBackupRequest(Socket clientSocket, int primaryPort, int key) {
+    private static synchronized void handleBackupRequest(Socket clientSocket, int primaryPort, int key) {
         try {
             // Setup reader and writer for client
             InputStream input = clientSocket.getInputStream();

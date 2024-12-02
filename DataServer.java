@@ -9,18 +9,20 @@ public class DataServer {
     private static int dataStore; // Primary data store
     private static int numBackups = 0;
     private static ArrayList<Integer> backupDataStore = new ArrayList<Integer>();
-    private static HashMap<Integer, Integer> backupServers = new HashMap<>();
+    private static ArrayList<Integer> backupServers = new ArrayList<Integer>();
     private static final Object lock = new Object(); // To ensure sequential consistency
 
     public static void main(String[] args) throws IOException {
         if (args.length == 1) {
             int primaryPort = Integer.parseInt(args[0]);
             startPrimaryServer(primaryPort);
-        } else if (args.length == 2) {
+        } 
+        else if (args.length == 2) {
             int backupPort = Integer.parseInt(args[0]);
             int primaryPort = Integer.parseInt(args[1]);
             startBackupServer(backupPort, primaryPort);
-        } else {
+        } 
+        else {
             System.out.println("Invalid arguments.");
         }
     }
@@ -74,7 +76,7 @@ public class DataServer {
                 //synchronized (lock) {
                     dataStore = newValue;
                     // 2 - Update backup servers
-                    for (Integer port : backupServers.values()) {
+                    for (Integer port : backupServers) {
                         Socket backupSocket = new Socket("localhost", port);
                         PrintWriter backupWriter = new PrintWriter(backupSocket.getOutputStream(), true);
                         backupWriter.println("UPDATE:" + newValue);
@@ -90,7 +92,7 @@ public class DataServer {
                 // 1 - Record backup's port number
                 int backupPort = Integer.parseInt(request.split(":")[1]);
                 numBackups++;
-                backupServers.put(numBackups, backupPort);
+                backupServers.add(numBackups, backupPort);
                 
                 // 2 - Send acknowledgement
                 writer.println("COMPLETE_JOIN");
@@ -105,7 +107,7 @@ public class DataServer {
                 //synchronized (lock) {
                     dataStore = newValue;
                     // Propagate to all backups
-                    for (Integer port : backupServers.values()) {
+                    for (Integer port : backupServers) {
                         Socket backupSocket = new Socket("localhost", port);
                         PrintWriter backupWriter = new PrintWriter(backupSocket.getOutputStream(), true);
                         backupWriter.println("UPDATE:" + newValue);
@@ -145,8 +147,8 @@ public class DataServer {
         primaryWriter.println("JOIN:" + backupPort);
 
         // 2 - Set up backup replica of data store
-        int i = getKey(backupServers, backupPort);
-        backupDataStore.add(i, 0);
+        int key = numBackups;
+        backupDataStore.add(key, 0);
 
         // Wait for response from join request
         InputStream input = primarySocket.getInputStream();
@@ -161,7 +163,7 @@ public class DataServer {
         // 3 - Wait at port for requests
         while (true) {
             Socket clientSocket = backupServerSocket.accept();
-            new Thread(() -> handleBackupRequest(clientSocket, primarySocket, backupPort)).start();
+            new Thread(() -> handleBackupRequest(clientSocket, primarySocket, key)).start();
         }
     }
 
@@ -171,16 +173,13 @@ public class DataServer {
      * @param primarySocket
      * @param backupSocket The current backup
      */
-    private static void handleBackupRequest(Socket clientSocket, Socket primarySocket, int backupPort) {
+    private static void handleBackupRequest(Socket clientSocket, Socket primarySocket, int key) {
         try {
             // Setup reader and writer for client
             InputStream input = clientSocket.getInputStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(input));
             PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true);
             String request = reader.readLine();
-
-            // Get the current backup server's index/key
-            int key = getKey(backupServers, backupPort);
 
             /* Read Request */
             if (request.startsWith("READ")) {
@@ -227,16 +226,4 @@ public class DataServer {
         }
     }
 
-    /**
-     * Gets the key associated with a given value
-     * Source: https://www.baeldung.com/java-map-key-from-value
-     */
-    private static int getKey(Map<Integer, Integer> map, Integer value) {
-        return map
-          .entrySet()
-          .stream()
-          .filter(entry -> value.equals(entry.getValue()))
-          .map(Map.Entry::getKey)
-          .findFirst().get();
-    }
 }

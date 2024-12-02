@@ -177,7 +177,7 @@ public class DataServer {
 
         while (true) {
             Socket clientSocket = backupServerSocket.accept();
-            new Thread(() -> handleBackupRequest(clientSocket, primarySocket, key)).start();
+            new Thread(() -> handleBackupRequest(clientSocket, primaryPort, key)).start();
         }
     }
 
@@ -187,7 +187,7 @@ public class DataServer {
      * @param primarySocket
      * @param backupSocket The current backup
      */
-    private static void handleBackupRequest(Socket clientSocket, Socket primarySocket, int key) {
+    private static void handleBackupRequest(Socket clientSocket, int primaryPort, int key) {
         try {
             // Setup reader and writer for client
             InputStream input = clientSocket.getInputStream();
@@ -209,6 +209,7 @@ public class DataServer {
                 int newValue = Integer.parseInt(request.split(":")[1]);
 
                 // 1 - Send UPDATE to primary server 
+                Socket primarySocket = new Socket("localhost", primaryPort);
                 PrintWriter primaryWriter = new PrintWriter(primarySocket.getOutputStream(), true);
                 primaryWriter.println("UPDATE:" + newValue);
 

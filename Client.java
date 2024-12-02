@@ -43,7 +43,7 @@ public class Client {
 			//get response
 			String line = reader.readLine();
 
-			System.out.println("Got response: " + line);
+			System.out.println("Got response: " + line + "\n");
 			
 			//close the socket
 			socket.close();

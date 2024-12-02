@@ -141,31 +141,39 @@ public class DataServer {
      * @throws IOException
      */
     public static void startBackupServer(int backupPort, int primaryPort) throws IOException {
-        // Set up writer to primary server
-        System.out.println("I am a backup with port: " + backupPort);
-        Socket primarySocket = new Socket("localhost", primaryPort);
-        PrintWriter primaryWriter = new PrintWriter(primarySocket.getOutputStream(), true);
-        
-        // 1 - Send join request
-        primaryWriter.println("JOIN:" + backupPort);
+        Socket primarySocket;
+        PrintWriter primaryWriter;
+        int key;
+        ServerSocket backupServerSocket;
 
-        int key = numBackups;
-        numBackups++;
+        synchronized (lock) {
+            // Set up writer to primary server
+            System.out.println("I am a backup with port: " + backupPort);
+            primarySocket = new Socket("localhost", primaryPort);
+            primaryWriter = new PrintWriter(primarySocket.getOutputStream(), true);
+            
+            // 1 - Send join request
+            primaryWriter.println("JOIN:" + backupPort);
 
-        // 2 - Set up backup replica of data store
-        backupDataStore.add(key, 0);
+            key = numBackups;
+            numBackups++;
 
-        // Wait for response from join request
-        InputStream input = primarySocket.getInputStream();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-        String joinResponse = reader.readLine();
-        System.out.println(joinResponse);
+            // 2 - Set up backup replica of data store
+            backupDataStore.add(key, 0);
 
-        // After acknowledged, set up the backup server
-        ServerSocket backupServerSocket = new ServerSocket(backupPort);
-        System.out.println("Data Server is listening on port " + backupPort);
+            // Wait for response from join request
+            InputStream input = primarySocket.getInputStream();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+            String joinResponse = reader.readLine();
+            System.out.println(joinResponse);
 
-        // 3 - Wait at port for requests
+            // After acknowledged, set up the backup server
+            backupServerSocket = new ServerSocket(backupPort);
+            System.out.println("Data Server is listening on port " + backupPort);
+
+            // 3 - Wait at port for requests
+        }
+
         while (true) {
             Socket clientSocket = backupServerSocket.accept();
             new Thread(() -> handleBackupRequest(clientSocket, primarySocket, key)).start();

@@ -143,10 +143,13 @@ public class DataServer {
         PrintWriter primaryWriter = new PrintWriter(primarySocket.getOutputStream(), true);
 
         int key = numBackups;
-        numBackups++;
-
-        // 1 - Send join request
-        primaryWriter.println("JOIN:" + backupPort);
+        
+        synchronized (lock) {
+            numBackups++;
+            
+            // 1 - Send join request
+            primaryWriter.println("JOIN:" + backupPort);
+        }
 
         // 2 - Set up backup replica of data store
         backupDataStore.add(key, 0);

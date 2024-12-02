@@ -60,6 +60,7 @@ public class DataServer {
             PrintWriter writer = new PrintWriter(requestingSocket.getOutputStream(), true);
             String request = reader.readLine();
             System.out.println("Received request: " + request);
+            int key = numBackups;
 
             /* Read Request */
             if (request.startsWith("READ")) {
@@ -93,10 +94,10 @@ public class DataServer {
                 System.out.println("\tJoin at primary recieved");
                 // 1 - Record backup's port number
                 int backupPort = Integer.parseInt(request.split(":")[1]);
-                backupServers.add(numBackups, backupPort);
+                backupServers.add(key, backupPort);
                 
                 // 2 - Send acknowledgement
-                writer.println("COMPLETE_JOIN");
+                writer.println("COMPLETE_JOIN Port: " + backupServers.get(key));
             } 
 
             /* Update Request */
@@ -218,9 +219,7 @@ public class DataServer {
                 int newValue = Integer.parseInt(request.split(":")[1]);
                 
                 // Update data store replica
-                //synchronized (lock) {
-                    backupDataStore.set(key, newValue);
-                //}
+                backupDataStore.set(key, newValue);
 
                 // Send acknowledgement
                 writer.println("COMPLETE_UPDATE");

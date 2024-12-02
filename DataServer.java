@@ -91,12 +91,6 @@ public class DataServer {
                 // 1 - Record backup's port number
                 int backupPort = Integer.parseInt(request.split(":")[1]);
                 backupServers.add(backupPort);
-
-                // Populate the new backup server's replica of data store with the current value
-                int port = backupServers.size() - 1;
-                Socket backupSocket = new Socket("localhost", port);
-                PrintWriter backupWriter = new PrintWriter(backupSocket.getOutputStream(), true);
-                backupWriter.println("UPDATE:" + dataStore);
                 
                 // 2 - Send acknowledgement
                 writer.println("COMPLETE_JOIN Port: " + backupServers.get(key));

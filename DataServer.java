@@ -94,7 +94,8 @@ public class DataServer {
                 System.out.println("\tJoin at primary recieved");
                 // 1 - Record backup's port number
                 int backupPort = Integer.parseInt(request.split(":")[1]);
-                backupServers.add(key, backupPort);
+                backupServers.add(backupPort);
+                System.out.println(backupServers.toString());
                 
                 // 2 - Send acknowledgement
                 writer.println("COMPLETE_JOIN Port: " + backupServers.get(key));
@@ -203,7 +204,7 @@ public class DataServer {
 
             /* Write Request */
             else if (request.startsWith("WRITE:")) {
-                System.out.println("\t\tWrite at backup recieved on port" + backupServers.get(key));
+                System.out.println("\t\tWrite at backup recieved");
                 // Get new value 
                 int newValue = Integer.parseInt(request.split(":")[1]);
 
@@ -223,7 +224,7 @@ public class DataServer {
             
             /* Update Request */
             else if (request.startsWith("UPDATE:")) {
-                System.out.println("\t\tUpdate at backup recieved on port" + backupServers.get(key));
+                System.out.println("\t\tUpdate at backup recieved");
                 int newValue = Integer.parseInt(request.split(":")[1]);
                 
                 // Update data store replica

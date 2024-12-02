@@ -7,7 +7,7 @@ import java.util.stream.Stream;
 
 public class DataServer {
     private static int dataStore; // Primary data store
-    private static int numBackups = 0;
+    private static int numBackups = -1;
     private static ArrayList<Integer> backupDataStore = new ArrayList<Integer>();
     private static ArrayList<Integer> backupServers = new ArrayList<Integer>();
     private static final Object lock = new Object(); // To ensure sequential consistency

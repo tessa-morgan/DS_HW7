@@ -34,13 +34,11 @@ public class DataServer {
      * @throws IOException
      */
     public static void startPrimaryServer(int primaryPort) throws IOException {
-        System.out.println("I am the primary!");
         // 1 - Set up primary data store, defaults to zero
         dataStore = 0;
 
         // 2 - Create TCP server socket
         ServerSocket serverSocket = new ServerSocket(primaryPort);
-        System.out.println("Data Server is listening on port " + primaryPort);
 
         // 3 - Wait at port for requests
         while (true) {
@@ -59,7 +57,7 @@ public class DataServer {
             BufferedReader reader = new BufferedReader(new InputStreamReader(input));
             PrintWriter writer = new PrintWriter(requestingSocket.getOutputStream(), true);
             String request = reader.readLine();
-            System.out.println("Received request: " + request);
+            System.out.println("Primary received request: " + request);
             int key = numBackups;
 
             /* Read Request */
@@ -71,11 +69,10 @@ public class DataServer {
 
             /* Write Request */
             else if (request.startsWith("WRITE:")) {
-                System.out.println("\tWrite at primary recieved");
                 // 1 - Update own data store replica
                 int newValue = Integer.parseInt(request.split(":")[1]);
                 
-                //synchronized (lock) {
+                synchronized (lock) {
                     dataStore = newValue;
                     // 2 - Update backup servers
                     for (Integer port : backupServers) {
@@ -86,16 +83,14 @@ public class DataServer {
 
                     // 3 - Reply to client
                     writer.println("COMPLETE_WRITE");
-                //}
+                }
             } 
 
             /* Join Request */
             else if (request.startsWith("JOIN:")) {
-                System.out.println("\tJoin at primary recieved");
                 // 1 - Record backup's port number
                 int backupPort = Integer.parseInt(request.split(":")[1]);
                 backupServers.add(backupPort);
-                System.out.println(backupServers.toString());
                 
                 // 2 - Send acknowledgement
                 writer.println("COMPLETE_JOIN Port: " + backupServers.get(key));
@@ -103,12 +98,11 @@ public class DataServer {
 
             /* Update Request */
             else if (request.startsWith("UPDATE:")) {
-                System.out.println("\tUpdate at primary recieved");
                 // Get the new data store value
                 int newValue = Integer.parseInt(request.split(":")[1]);
 
                 // 1 - Have all backups update
-                //synchronized (lock) {
+                synchronized (lock) {
                     dataStore = newValue;
                     // Propagate to all backups
                     for (Integer port : backupServers) {
@@ -116,7 +110,7 @@ public class DataServer {
                         PrintWriter backupWriter = new PrintWriter(backupSocket.getOutputStream(), true);
                         backupWriter.println("UPDATE:" + newValue);
                     }
-                //}
+                }
 
                 // 2 - Send acknowledgement to requesting backup server
                 writer.println("COMPLETE_UPDATE");
@@ -142,39 +136,28 @@ public class DataServer {
      * @throws IOException
      */
     public static void startBackupServer(int backupPort, int primaryPort) throws IOException {
-        Socket primarySocket;
-        PrintWriter primaryWriter;
-        int key;
-        ServerSocket backupServerSocket;
-
-        synchronized (lock) {
-            // Set up writer to primary server
-            System.out.println("I am a backup with port: " + backupPort);
-            primarySocket = new Socket("localhost", primaryPort);
-            primaryWriter = new PrintWriter(primarySocket.getOutputStream(), true);
+        Socket primarySocket = new Socket("localhost", primaryPort);
+        PrintWriter primaryWriter = new PrintWriter(primarySocket.getOutputStream(), true);
             
-            // 1 - Send join request
-            primaryWriter.println("JOIN:" + backupPort);
+        // 1 - Send join request
+        primaryWriter.println("JOIN:" + backupPort);
 
-            key = numBackups;
-            numBackups++;
+        int key = numBackups;
+        numBackups++;
 
-            // 2 - Set up backup replica of data store
-            backupDataStore.add(key, 0);
+        // 2 - Set up backup replica of data store
+        backupDataStore.add(key, 0);
 
-            // Wait for response from join request
-            InputStream input = primarySocket.getInputStream();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-            String joinResponse = reader.readLine();
-            System.out.println(joinResponse);
+        // Wait for response from join request
+        InputStream input = primarySocket.getInputStream();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+        String joinResponse = reader.readLine();
+        System.out.println(joinResponse);
 
-            // After acknowledged, set up the backup server
-            backupServerSocket = new ServerSocket(backupPort);
-            System.out.println("Data Server is listening on port " + backupPort);
+        // After acknowledged, set up the backup server
+        ServerSocket backupServerSocket = new ServerSocket(backupPort);
 
-            // 3 - Wait at port for requests
-        }
-
+        // 3 - Wait at port for requests
         while (true) {
             Socket clientSocket = backupServerSocket.accept();
             new Thread(() -> handleBackupRequest(clientSocket, primaryPort, key)).start();
@@ -204,7 +187,6 @@ public class DataServer {
 
             /* Write Request */
             else if (request.startsWith("WRITE:")) {
-                System.out.println("\t\tWrite at backup recieved");
                 // Get new value 
                 int newValue = Integer.parseInt(request.split(":")[1]);
 
@@ -225,7 +207,6 @@ public class DataServer {
             
             /* Update Request */
             else if (request.startsWith("UPDATE:")) {
-                System.out.println("\t\tUpdate at backup recieved");
                 int newValue = Integer.parseInt(request.split(":")[1]);
                 
                 // Update data store replica
